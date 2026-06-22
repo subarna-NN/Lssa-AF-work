@@ -165,7 +165,7 @@ err=np.abs(U_pred-U_ref)
 vmin,vmax=U_ref.min(),U_ref.max()
 
 # ═════════════════════════════════════════════════════════════════════════════
-# PLOT 1 — Heatmaps: FDM | LSSA | Error  (3 panels, one frame)
+# PLOT 1 — Heatmaps: FDM | LSSA | Error 
 # ═════════════════════════════════════════════════════════════════════════════
 fig,axes=plt.subplots(1,3,figsize=(18,5.5))
 fig.patch.set_facecolor('white')
@@ -241,7 +241,7 @@ plt.show()
 plt.close(fig)
 
 # ═════════════════════════════════════════════════════════════════════════════
-# PLOT 4 — Activation shape (tanh / init / learned)
+# PLOT 4 — Activation shape
 # ═════════════════════════════════════════════════════════════════════════════
 fig,ax=plt.subplots(figsize=(7,5.5))
 fig.patch.set_facecolor('white'); ax.set_facecolor('white')
