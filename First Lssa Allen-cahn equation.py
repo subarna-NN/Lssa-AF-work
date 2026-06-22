@@ -178,7 +178,7 @@ with torch.no_grad():
         gammas.extend(act.gamma.cpu().numpy().tolist())
 
 # ═════════════════════════════════════════════════════════════════════════════
-# PLOT 1 — Heatmaps: FDM | LSSA | Error  (3 panels, one frame)
+# PLOT 1 — Heatmaps: FDM | LSSA | Error  
 # ═════════════════════════════════════════════════════════════════════════════
 fig,axes=plt.subplots(1,3,figsize=(18,5.5))
 fig.patch.set_facecolor('white')
@@ -276,7 +276,7 @@ plt.show()
 plt.close(fig)
 
 # ═════════════════════════════════════════════════════════════════════════════
-# PLOT 5 — beta histogram  (key result for Allen-Cahn — stiffness adaptation)
+# PLOT 5 — beta histogram  
 # ═════════════════════════════════════════════════════════════════════════════
 fig,ax=plt.subplots(figsize=(7,5.5))
 fig.patch.set_facecolor('white'); ax.set_facecolor('white')
