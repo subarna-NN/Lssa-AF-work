@@ -177,7 +177,7 @@ with torch.no_grad():
         gammas.extend(act.gamma.cpu().numpy().tolist())
 
 # ═════════════════════════════════════════════════════════════════════════════
-# PLOT 1a — Exact solution only (individual frame)
+# PLOT 1a — Exact solution only 
 # ═════════════════════════════════════════════════════════════════════════════
 fig,ax=plt.subplots(figsize=(6,5.5))
 fig.patch.set_facecolor('white'); ax.set_facecolor('white')
@@ -192,7 +192,7 @@ plt.show()
 plt.close(fig)
 
 # ═════════════════════════════════════════════════════════════════════════════
-# PLOT 1b — Heatmaps: FDM | LSSA | Error  (3 panels, one frame)
+# PLOT 1b — Heatmaps: FDM | LSSA | Error  
 # ═════════════════════════════════════════════════════════════════════════════
 fig,axes=plt.subplots(1,3,figsize=(18,5.5))
 fig.patch.set_facecolor('white')
@@ -304,7 +304,7 @@ plt.show()
 plt.close(fig)
 
 # ═════════════════════════════════════════════════════════════════════════════
-# PLOT 6 — gamma histogram  (KEY RESULT — spectral resonance)
+# PLOT 6 — gamma histogram  
 # ═════════════════════════════════════════════════════════════════════════════
 fig,ax=plt.subplots(figsize=(7,5.5))
 fig.patch.set_facecolor('white'); ax.set_facecolor('white')
