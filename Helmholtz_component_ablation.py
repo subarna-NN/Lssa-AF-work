@@ -1,35 +1,3 @@
-"""
-=============================================================================
-ABLATION STUDY — LSSA-PINN on 2D Helmholtz Equation
-Reviewer 1 request: isolate the contribution of each LSSA parameter (α, β, γ)
-=============================================================================
-PURPOSE:
-  Disable each LSSA parameter in turn and compare against Full LSSA:
-
-    V1  Fixed γ         : α learnable, β learnable, γ frozen at π
-    V2  Fixed α         : α frozen at 0.5, β learnable, γ learnable
-    V3  Learnable β only: α frozen at 0.5, β learnable, γ frozen at π
-    V4  Pure Gabor      : α frozen at 0.0 (kills tanh), β learnable, γ learnable
-
-  Full LSSA reference (already established, single-seed=42):
-    L2=0.0027%, L1=0.0018%, γ̄=2.972
-
-EVERYTHING ELSE IS IDENTICAL to the finalized lssa_helmholtz_v2:
-  PDE:   -(u_xx + u_yy) - k^2*u = f,  (x,y) in [0,1]^2
-  BC:    u = 0 on all four edges
-  Sol:   u* = sin(pi*x)*sin(pi*y),  k=1
-  FDM:   5-point stencil, N=256
-  Net:   5x128 MLP, Xavier init for weights
-  Adam:  20000 epochs, CosineAnnealingWarmRestarts T0=4000, T_mult=2
-  LBFGS: 4 rounds x 500 iters
-  w_bc=200, N_col=10000, N_bc=800, seed=42
-  alpha_0=0.5, beta_0=1.0, gamma_0=pi
-
-OUTPUT: text-only results — per-variant L2, L1, final loss, trained mean
-        (α, β, γ) — ready for direct insertion into a manuscript table.
-=============================================================================
-"""
-
 import torch, torch.nn as nn
 import numpy as np
 from scipy.sparse import diags, kron, eye
@@ -50,7 +18,7 @@ print("="*70)
 def u_exact(x, y):  return np.sin(np.pi*x) * np.sin(np.pi*y)
 def f_source(x, y): return F_AMP * np.sin(np.pi*x) * np.sin(np.pi*y)
 
-# ── FDM REFERENCE (identical to finalized version) ───────────────────
+# ── FDM REFERENCE  ───────────────────
 def compute_fdm(N=256):
     print("[FDM] Computing Helmholtz reference ...")
     t0 = time.time(); h = 1.0/N; ni = N-1
@@ -289,19 +257,3 @@ for label in variants:
     print(f"  {label:<25} {r['L2']*100:>10.4f} {r['L1']*100:>10.4f} "
           f"{r['gamma']:>8.4f} {r['beta']:>8.4f} {r['alpha']:>8.4f}")
 print("="*70)
-
-# ── LaTeX-READY TABLE ROWS ───────────────────────────────────────────
-print("\nLaTeX table rows (for insertion into ablation table):")
-print("-"*70)
-for label in variants:
-    r = results[label]
-    pretty = {
-        'V1_fixed_gamma':          'Fixed $\\gamma$',
-        'V2_fixed_alpha':          'Fixed $\\alpha$',
-        'V3_learnable_beta_only':  'Learnable $\\beta$ only',
-        'V4_pure_gabor':           'Pure Gabor',
-    }[label]
-    print(f"  {pretty:<26} & {r['L2']*100:.4f} & {r['L1']*100:.4f} & "
-          f"${r['gamma']:.3f}$ & ${r['beta']:.3f}$ & ${r['alpha']:.3f}$ \\\\")
-print("  \\midrule")
-print(f"  Full LSSA (ref)            & 0.0027 & 0.0018 & $2.972$ & $0.921$ & $0.548$ \\\\")
