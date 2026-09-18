@@ -1,18 +1,3 @@
-"""
-Plot generator for LSSA Allen-Cahn finalized results.
-Conditions applied:
-  - Each plot is an individual PNG, 600 dpi
-  - No accuracy numbers anywhere on any plot
-  - All original training code unchanged
-  - Individual frames:
-      (1) Heatmaps: FDM | LSSA | Error  (3 panels, one frame)
-      (2) Solution slices at t=0.25, 0.50, 1.00
-      (3) Training loss history
-      (4) Activation shape
-      (5) beta histogram  (key result for Allen-Cahn)
-      (6) gamma histogram
-"""
-
 import torch, torch.nn as nn
 import numpy as np
 import matplotlib
@@ -178,7 +163,7 @@ with torch.no_grad():
         gammas.extend(act.gamma.cpu().numpy().tolist())
 
 # ═════════════════════════════════════════════════════════════════════════════
-# PLOT 1 — Heatmaps: FDM | LSSA | Error  
+# PLOT 1 — Heatmaps
 # ═════════════════════════════════════════════════════════════════════════════
 fig,axes=plt.subplots(1,3,figsize=(18,5.5))
 fig.patch.set_facecolor('white')
@@ -202,7 +187,7 @@ plt.show()
 plt.close(fig)
 
 # ═════════════════════════════════════════════════════════════════════════════
-# PLOT 2 — Solution slices at t=0.25, 0.50, 1.00
+# PLOT 2 — Solution slices 
 # ═════════════════════════════════════════════════════════════════════════════
 fig,ax=plt.subplots(figsize=(8,5.5))
 fig.patch.set_facecolor('white'); ax.set_facecolor('white')
