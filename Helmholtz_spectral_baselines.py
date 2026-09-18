@@ -1,48 +1,3 @@
-"""
-=============================================================================
-SPECTRAL BASELINES COMPARISON — 2D Helmholtz Equation
-Reviewer 1 request: direct numerical comparison with published spectral
-methods (FF-PINN, SIREN, GaborPINN)
-=============================================================================
-PURPOSE:
-  Head-to-head comparison of LSSA against three published spectral methods
-  on the same Helmholtz benchmark, same protocol, same seed.
-
-  Method 1: SIREN         — Sitzmann et al. NeurIPS 2020
-                            activation: sin(omega0 * z)
-                            init: uniform(-sqrt(6/n)/omega0, +sqrt(6/n)/omega0)
-                                  first layer: uniform(-1/n, +1/n)
-                            omega0 = 6.0 (chosen for low-k Helmholtz)
-
-  Method 2: FF-PINN       — Tancik et al. NeurIPS 2020
-                            input encoding: [cos(2*pi*B*x), sin(2*pi*B*x)]
-                            B ~ N(0, sigma^2 * I),  sigma = 1.0
-                            followed by standard tanh MLP
-
-  Method 3: GaborPINN     — Huang & Alkhalifah IEEE GRSL 2023
-                            architecture: Multiplicative Filter Network (MFN)
-                            g_i(x) = exp(-gamma_i * ||x - mu_i||^2)
-                                     * sin(omega_i * x + phi_i)
-                            omega scale matched to Helmholtz frequency pi
-
-  Reference: Full LSSA (from finalized manuscript, single seed 42)
-             L2=0.0027%, L1=0.0018%, Linf=1.232e-4
-
-EVERYTHING ELSE IS IDENTICAL to the finalized lssa_helmholtz_v2:
-  PDE:   -(u_xx + u_yy) - k^2*u = f,  (x,y) in [0,1]^2
-  BC:    u = 0 on all four edges
-  Sol:   u* = sin(pi*x)*sin(pi*y),  k=1
-  FDM:   5-point stencil, N=256
-  Depth: 5 hidden layers, width 128
-  Adam:  20000 epochs, CosineAnnealingWarmRestarts T0=4000, T_mult=2
-  LBFGS: 4 rounds x 500 iters
-  w_bc=200, N_col=10000, N_bc=800, seed=42
-
-OUTPUT: text-only results — per-method L2, L1, Linf, final loss, wall
-        time, and parameter count. Ready for direct table insertion.
-=============================================================================
-"""
-
 import torch, torch.nn as nn
 import numpy as np
 from scipy.sparse import diags, kron, eye
@@ -63,7 +18,7 @@ print("="*70)
 def u_exact(x, y):  return np.sin(np.pi*x) * np.sin(np.pi*y)
 def f_source(x, y): return F_AMP * np.sin(np.pi*x) * np.sin(np.pi*y)
 
-# ── FDM REFERENCE (identical to finalized version) ───────────────────
+# ── FDM REFERENCE  ───────────────────
 def compute_fdm(N=256):
     print("[FDM] Computing Helmholtz reference ...")
     t0 = time.time(); h = 1.0/N; ni = N-1
@@ -83,9 +38,6 @@ def compute_fdm(N=256):
 
 # =====================================================================
 # METHOD 1: SIREN
-# Sitzmann, Martel, Bergman, Lindell, Wetzstein.
-# Implicit Neural Representations with Periodic Activation Functions.
-# NeurIPS 2020.
 # =====================================================================
 class SIREN(nn.Module):
     """
@@ -125,10 +77,6 @@ class SIREN(nn.Module):
 
 # =====================================================================
 # METHOD 2: Fourier Features PINN (FF-PINN)
-# Tancik, Srinivasan, Mildenhall, Fridovich-Keil, Raghavan, Singhal,
-# Ramamoorthi, Barron, Ng.
-# Fourier Features Let Networks Learn High Frequency Functions
-# in Low Dimensional Domains. NeurIPS 2020.
 # =====================================================================
 class FFPINN(nn.Module):
     """
@@ -167,20 +115,6 @@ class FFPINN(nn.Module):
 
 # =====================================================================
 # METHOD 3: GaborPINN
-# Huang, Alkhalifah.
-# GaborPINN: Efficient Physics Informed Neural Networks Using
-# Multiplicative Filtered Networks.
-# IEEE Geoscience and Remote Sensing Letters, 2023.
-#
-# Built on the Multiplicative Filter Network (Fathony et al. ICLR 2021).
-# Architecture:
-#   z_1 = g_1(x)
-#   z_{i+1} = (W_i z_i + b_i) * g_{i+1}(x)     (elementwise *)
-#   output = W_k z_k + b_k
-# with Gabor filters:
-#   g_i(x) = exp(-0.5 * gamma_i * ||x - mu_i||^2) * sin(omega_i^T x + phi_i)
-# Parameters gamma_i, mu_i, omega_i, phi_i are all learnable.
-# omega initialized with scale matched to Helmholtz frequency pi.
 # =====================================================================
 class GaborFilter(nn.Module):
     """One Gabor filter block producing an (output_dim,)-vector for each
@@ -237,7 +171,7 @@ class GaborPINN(nn.Module):
         return self.output(z)
 
 
-# ── LOSS AND SAMPLING (shared across all three methods) ──────────────
+# ── LOSS AND SAMPLING ──────────────
 def helmholtz_loss(model, xc, yc, fc, xb, yb, ub, w_bc=200.0):
     xc = xc.requires_grad_(True); yc = yc.requires_grad_(True)
     u = model(xc, yc)
@@ -369,19 +303,3 @@ for label in [m[0] for m in methods]:
     print(f"  {label:<25} {r['L2']*100:>10.4f} {r['L1']*100:>10.4f} "
           f"{r['Linf']:>12.4e} {r['params']:>10,} {r['time']:>8.0f}")
 print("="*70)
-
-# ── LaTeX-READY TABLE ROWS ───────────────────────────────────────────
-print("\nLaTeX table rows:")
-print("-"*70)
-for label in [m[0] for m in methods]:
-    r = results[label]
-    pretty = {
-        'SIREN (omega0=6.0)':  'SIREN~\\cite{sitzmann2020implicit}',
-        'FF-PINN (sigma=1.0)': 'FF-PINN~\\cite{tancik2020fourier}',
-        'GaborPINN':           'GaborPINN~\\cite{huang2023gaborpinn}',
-    }[label]
-    print(f"  {pretty:<40} & {r['L2']*100:.4f} & {r['L1']*100:.4f} & "
-          f"${r['Linf']:.3e}$ & {r['params']:,} \\\\")
-print("  \\midrule")
-print(f"  \\textbf{{LSSA (proposed)}}                & \\textbf{{0.0027}} & "
-      f"\\textbf{{0.0018}} & $\\bm{{1.232\\!\\times\\!10^{{-4}}}}$ & \\textbf{{68,481}} \\\\")
