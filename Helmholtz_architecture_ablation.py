@@ -1,36 +1,3 @@
-"""
-=============================================================================
-ARCHITECTURE ABLATION — LSSA vs tanh across depth/width — 2D Helmholtz
-Reviewer 2 request: verify LSSA's advantage is robust across network sizes
-=============================================================================
-PURPOSE:
-  Train LSSA and tanh baseline across four architectures spanning both
-  depth and width, to show LSSA's advantage is not specific to 5x128.
-
-    Config A:  3 x 64    (small, shallow)
-    Config B:  3 x 128   (shallow, wide)
-    Config C:  5 x 128   (paper default — reference)
-    Config D:  7 x 128   (deep)
-
-  For each config: one LSSA run + one tanh run = 8 runs total.
-  (Config C LSSA already established: L2=0.0027% — re-run here for a
-   fully self-consistent same-protocol table.)
-
-EVERYTHING ELSE IS IDENTICAL to the finalized lssa_helmholtz_v2:
-  PDE:   -(u_xx + u_yy) - k^2*u = f,  (x,y) in [0,1]^2
-  BC:    u = 0 on all four edges
-  Sol:   u* = sin(pi*x)*sin(pi*y),  k=1
-  FDM:   5-point stencil, N=256
-  Adam:  20000 epochs, CosineAnnealingWarmRestarts T0=4000, T_mult=2
-  LBFGS: 4 rounds x 500 iters
-  w_bc=200, N_col=10000, N_bc=800, seed=42
-  LSSA init: alpha_0=0.5, beta_0=1.0, gamma_0=pi
-
-OUTPUT: text-only — per-config, per-method L2, L1, Linf, params, time;
-        plus a paired LSSA-vs-tanh comparison table.
-=============================================================================
-"""
-
 import torch, torch.nn as nn
 import numpy as np
 from scipy.sparse import diags, kron, eye
@@ -50,7 +17,7 @@ print("="*70)
 def u_exact(x, y):  return np.sin(np.pi*x) * np.sin(np.pi*y)
 def f_source(x, y): return F_AMP * np.sin(np.pi*x) * np.sin(np.pi*y)
 
-# ── FDM REFERENCE (identical to finalized version) ───────────────────
+# ── FDM REFERENCE  ───────────────────
 def compute_fdm(N=256):
     print("[FDM] Computing Helmholtz reference ...")
     t0 = time.time(); h = 1.0/N; ni = N-1
@@ -79,7 +46,7 @@ class LSSAActivation(nn.Module):
         b = self.beta.unsqueeze(0); g = self.gamma.unsqueeze(0)
         return a*torch.tanh(b*z) + (1-a)*torch.sin(g*z)*torch.exp(-0.5*z**2)
 
-# ── UNIFIED PINN (LSSA or tanh, configurable depth/width) ────────────
+# ── UNIFIED PINN ────────────
 class ConfigurablePINN(nn.Module):
     def __init__(self, method, depth, width):
         super().__init__()
@@ -243,16 +210,3 @@ for cid, depth, width in configs:
     ratio = rt['L2'] / rl['L2'] if rl['L2'] > 0 else float('inf')
     print(f"    Config {cid} ({depth}x{width}): tanh/LSSA L2 = {ratio:.1f}x  "
           f"(LSSA {'wins' if rl['L2'] < rt['L2'] else 'loses'})")
-
-# ── LaTeX-READY ROWS ─────────────────────────────────────────────────
-print("\nLaTeX table rows:")
-print("-"*70)
-for cid, depth, width in configs:
-    rl = results[(cid, 'lssa')]; rt = results[(cid, 'tanh')]
-    star = "\\textbf{" if cid == 'C' else ""
-    starclose = "}" if cid == 'C' else ""
-    print(f"  ${depth}\\times{width}$ & LSSA & {rl['L2']*100:.4f} & "
-          f"{rl['L1']*100:.4f} & {rl['params']:,} \\\\")
-    print(f"  ${depth}\\times{width}$ & tanh & {rt['L2']*100:.4f} & "
-          f"{rt['L1']*100:.4f} & {rt['params']:,} \\\\")
-    print("  \\midrule")
