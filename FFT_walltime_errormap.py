@@ -1,28 +1,3 @@
-"""
-=============================================================================
-TIER 2 COMBINED — single re-run producing all three no-retrain analyses
-=============================================================================
-Runs the minimal set of trainings once, SAVES every array and per-epoch
-loss, then generates the three Tier-2 outputs:
-
-  ITEM 8  (R1): FFT of trained LSSA Helmholtz output -> proves gamma maps
-                to real physical-space frequency.
-  ITEM 9  (R1/R2): Loss vs WALL-CLOCK time, LSSA vs tanh (Allen-Cahn) --
-                   per-epoch loss captured with real timestamps, Adam and
-                   L-BFGS phases both timed. Honest, not reconstructed.
-  ITEM 10 (R2): Squared-error spatial map, LSSA vs Swish (Allen-Cahn).
-
-Trainings performed (all identical to finalized protocols):
-  1. LSSA        on Helmholtz   (for item 8)
-  2. LSSA        on Allen-Cahn  (for items 9 + 10)
-  3. Swish       on Allen-Cahn  (for item 10)
-  4. tanh        on Allen-Cahn  (for item 9 loss-vs-time baseline)
-
-All protocols EXACTLY match the finalized manuscript runs. seed=42.
-Outputs: 3 figures shown inline via plt.show() (nothing saved).
-=============================================================================
-"""
-
 import torch, torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
@@ -46,7 +21,7 @@ def save_fig(fig, name):
     plt.show()
 
 # =====================================================================
-#  HELMHOLTZ PIECES  (for item 8)
+#  HELMHOLTZ PIECES  
 # =====================================================================
 K = 1.0; F_AMP = 2.0*np.pi**2 - K**2
 def h_u_exact(x, y):  return np.sin(np.pi*x)*np.sin(np.pi*y)
@@ -149,7 +124,7 @@ def helmholtz_eval(model,xg,yg,batch=4096):
     return uf.reshape(len(yg),len(xg))
 
 # =====================================================================
-#  ALLEN-CAHN PIECES  (for items 9 + 10)
+#  ALLEN-CAHN PIECES  
 # =====================================================================
 EPS2=0.0001
 def ac_fdm(Nx=512,Nt=5000,eps2=EPS2):
@@ -266,15 +241,15 @@ def ac_eval(model,x_fdm,t_fdm):
     return U
 
 # =====================================================================
-#  RUN EVERYTHING
+#  RUN 
 # =====================================================================
-print("\n########## ITEM 8: Helmholtz LSSA (FFT) ##########")
+print("\n########## Helmholtz LSSA (FFT) ##########")
 xg,yg,Uex_h,Ufdm_h = helmholtz_fdm()
 m_h = train_helmholtz_lssa()
 U_h = helmholtz_eval(m_h,xg,yg)
 print("  saved U_pred_lssa_helmholtz.npy")
 
-print("\n########## ITEMS 9+10: Allen-Cahn LSSA / Swish / tanh ##########")
+print("\n########## Allen-Cahn LSSA / Swish / tanh ##########")
 x_ac,t_ac,Uref_ac = ac_fdm()
 print("  training LSSA (Allen-Cahn) [loss-vs-time captured] ...")
 m_lssa_ac, t_lssa, l_lssa = train_ac(ACLSSA(), capture_loss=True)
@@ -285,8 +260,8 @@ U_sw_ac = ac_eval(m_sw_ac,x_ac,t_ac)
 print("  training tanh (Allen-Cahn) [loss-vs-time captured] ...")
 m_tanh_ac, t_tanh, l_tanh = train_ac(ACStd('tanh'), capture_loss=True)
 
-# ── ITEM 8 PLOT: FFT SPECTRUM ────────────────────────────────────────
-print("\n[Item 8] FFT of Helmholtz output ...")
+# ──PLOT: FFT SPECTRUM ────────────────────────────────────────
+print("\n FFT of Helmholtz output ...")
 Ny,Nx = U_h.shape
 dx = (xg[1]-xg[0])
 U = U_h - U_h.mean()
@@ -307,8 +282,8 @@ ax.set_xlim(-2.5,2.5); ax.legend(fontsize=11,framealpha=0.9)
 ax.grid(True,linestyle='--',linewidth=0.6,alpha=0.45); ax.tick_params(labelsize=11)
 plt.tight_layout(pad=1.0); save_fig(fig,'helmholtz_output_fft_spectrum.png')
 
-# ── ITEM 9 PLOT: LOSS vs WALL-CLOCK ──────────────────────────────────
-print("[Item 9] Loss vs wall-clock ...")
+# ──PLOT: LOSS vs WALL-CLOCK ──────────────────────────────────
+print("Loss vs wall-clock ...")
 fig,ax=plt.subplots(figsize=(8.5,5.5)); fig.patch.set_facecolor('white'); ax.set_facecolor('white')
 ax.semilogy(t_lssa,l_lssa,color='#C0392B',lw=1.8,label='LSSA')
 ax.semilogy(t_tanh,l_tanh,color='#1A5276',lw=1.8,label='tanh')
@@ -318,8 +293,8 @@ ax.legend(fontsize=12,framealpha=0.9)
 ax.grid(True,which='both',linestyle='--',linewidth=0.5,alpha=0.45); ax.tick_params(labelsize=11)
 plt.tight_layout(pad=1.0); save_fig(fig,'allencahn_loss_vs_walltime.png')
 
-# ── ITEM 10 PLOT: SQUARED-ERROR SPATIAL MAP LSSA vs SWISH ────────────
-print("[Item 10] Squared-error maps LSSA vs Swish ...")
+# ──PLOT: SQUARED-ERROR SPATIAL MAP LSSA vs SWISH ────────────
+print("Squared-error maps LSSA vs Swish ...")
 X,T_=np.meshgrid(x_ac,t_ac)
 err_lssa=(U_lssa_ac-Uref_ac)**2
 err_sw=(U_sw_ac-Uref_ac)**2
