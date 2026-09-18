@@ -1,12 +1,3 @@
-"""
-Plot generator for LSSA Burgers' finalized results.
-Conditions applied:
-  - Each plot is an individual PNG, 600 dpi
-  - No accuracy numbers anywhere on the plot
-  - Proper axes, legends, colormaps, text
-  - Frames: (1) Heatmaps, (2) Solution slices, (3) Loss history,
-            (4) Activation shape, (5) alpha histogram, (6) gamma histogram
-"""
 import numpy as np, torch, torch.nn as nn
 import matplotlib
 import matplotlib.pyplot as plt
@@ -165,7 +156,7 @@ err=np.abs(U_pred-U_ref)
 vmin,vmax=U_ref.min(),U_ref.max()
 
 # ═════════════════════════════════════════════════════════════════════════════
-# PLOT 1 — Heatmaps: FDM | LSSA | Error 
+# PLOT 1 — Heatmaps
 # ═════════════════════════════════════════════════════════════════════════════
 fig,axes=plt.subplots(1,3,figsize=(18,5.5))
 fig.patch.set_facecolor('white')
@@ -190,7 +181,7 @@ plt.show()
 plt.close(fig)
 
 # ═════════════════════════════════════════════════════════════════════════════
-# PLOT 2 — Solution slices at t=0.25, 0.50, 0.75
+# PLOT 2 — Solution slices 
 # ═════════════════════════════════════════════════════════════════════════════
 fig,ax=plt.subplots(figsize=(8,5.5))
 fig.patch.set_facecolor('white')
