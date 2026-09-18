@@ -1,9 +1,5 @@
 # LSSA: A Learnable Spectral-Smooth Activation Function for Physics-Informed Neural Networks
 
-Reference implementation and experiment scripts for the paper
-*"LSSA: A Learnable Spectral-Smooth Activation Function for Physics-Informed
-Neural Networks"*.
-
 ## Overview
 
 LSSA is a three-parameter per-neuron activation for PINNs:
