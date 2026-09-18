@@ -1,36 +1,3 @@
-"""
-=============================================================================
-GAMMA_0 INITIALIZATION SENSITIVITY SWEEP (EXTENSION) — 2D Helmholtz
-Reviewer 1 (Comment 1/2) & Reviewer 2: prove gamma_0=pi is not merely
-"starting at the answer" by showing behaviour across a range of gamma_0.
-=============================================================================
-PURPOSE:
-  Extends the earlier 3-point study (gamma_0 = pi/3, pi, 3pi) with THREE
-  new initializations to form a dense 6-point sensitivity sweep:
-
-      NEW runs in THIS script:  gamma_0 = 0.5*pi, 2*pi, 5*pi
-      ALREADY HAVE (do not rerun):
-          gamma_0 = pi/3  -> gamma_bar=1.021, L2=0.0035%
-          gamma_0 = pi    -> gamma_bar=2.972, L2=0.0027%
-          gamma_0 = 3*pi  -> gamma_bar=7.057, L2=99.86%
-
-  Merge the three new rows with the three existing rows to build the
-  final 6-point table/curve.
-
-EVERYTHING ELSE IS IDENTICAL to the finalized lssa_helmholtz_v2 and to
-the earlier sensitivity script:
-  PDE:   -(u_xx + u_yy) - k^2*u = f,  (x,y) in [0,1]^2
-  BC:    u = 0 on all four edges
-  Sol:   u* = sin(pi*x)*sin(pi*y),  k=1
-  FDM:   5-point stencil, N=256
-  Net:   5x128 MLP, Xavier init for weights
-  Adam:  20000 epochs, CosineAnnealingWarmRestarts T0=4000, T_mult=2
-  LBFGS: 4 rounds x 500 iters
-  w_bc=200, N_col=10000, N_bc=800, seed=42
-  alpha_0=0.5, beta_0=1.0 (unchanged); ONLY gamma_0 varies
-=============================================================================
-"""
-
 import torch, torch.nn as nn
 import numpy as np
 from scipy.sparse import diags, kron, eye
@@ -172,7 +139,7 @@ def get_gamma_mean(model):
             gs.extend(act.gamma.cpu().numpy().tolist())
     return float(np.mean(gs))
 
-# ── NEW GAMMA_0 POINTS (three only) ──────────────────────────────────
+# ── NEW GAMMA_0 POINTS  ──────────────────────────────────
 new_points = [
     ('gamma0_0.5pi', 0.5*np.pi),
     ('gamma0_2pi',   2.0*np.pi),
@@ -196,7 +163,7 @@ for label, g0 in new_points:
     print(f"  [{label}] gamma_0={g0:.4f} -> gamma_bar={gbar:.4f} | "
           f"L2={L2*100:.4f}% | L1={L1*100:.4f}% | |gbar-pi|={abs(gbar-np.pi):.4f}")
 
-# ── MERGED 6-POINT TABLE (3 existing + 3 new) ────────────────────────
+# ── MERGED 6-POINT TABLE ────────────────────────
 print("\n" + "="*70)
 print("  GAMMA_0 SENSITIVITY SWEEP — full 6-point table")
 print("  (existing 3 points hard-coded from earlier study for the table)")
@@ -210,19 +177,3 @@ existing = {
 
 print(f"  {'gamma_0':<12}{'gamma_0/pi':>12}{'gamma_bar':>12}{'|gbar-pi|':>12}{'L2 (%)':>12}")
 print("-"*70)
-# Assemble all six in ascending gamma_0 order
-rows = []
-rows.append((np.pi/3, existing['pi/3']['gamma_bar'], existing['pi/3']['L2']))
-rows.append((0.5*np.pi, results['gamma0_0.5pi']['gamma_bar'], results['gamma0_0.5pi']['L2']))
-rows.append((np.pi, existing['pi']['gamma_bar'], existing['pi']['L2']))
-rows.append((2*np.pi, results['gamma0_2pi']['gamma_bar'], results['gamma0_2pi']['L2']))
-rows.append((3*np.pi, existing['3pi']['gamma_bar'], existing['3pi']['L2']))
-rows.append((5*np.pi, results['gamma0_5pi']['gamma_bar'], results['gamma0_5pi']['L2']))
-for g0, gbar, L2 in rows:
-    print(f"  {g0:<12.4f}{g0/np.pi:>12.2f}{gbar:>12.4f}{abs(gbar-np.pi):>12.4f}{L2*100:>12.4f}")
-print("="*70)
-
-print("\nLaTeX rows (fill existing pi/3, pi, 3pi from your earlier logs if more precise):")
-for g0, gbar, L2 in rows:
-    tag = f"{g0/np.pi:.2f}\\pi"
-    print(f"  ${tag}$ & {gbar:.4f} & {abs(gbar-np.pi):.4f} & {L2*100:.4f} \\\\")
