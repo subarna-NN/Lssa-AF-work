@@ -1,39 +1,3 @@
-"""
-=============================================================================
-MULTI-SEED BASELINE COMPARISON — 1D Allen-Cahn Equation
-Reviewer 1 request: multi-seed statistics for ALL baselines (not just LSSA)
-=============================================================================
-PURPOSE:
-  Reviewer noted the reproducibility study ran only LSSA across seeds while
-  baselines were single-seed, making the Allen-Cahn comparison asymmetric.
-  This script runs the four fixed-activation baselines (tanh, GELU, Swish,
-  SELU) across the SAME four seeds used for LSSA (42, 123, 2024, 7),
-  producing a symmetric mean +/- std comparison.
-
-  Total runs: 4 activations x 4 seeds = 16 trainings.
-
-EVERYTHING IS IDENTICAL to the finalized LSSA Allen-Cahn comparison:
-  PDE:   u_t = eps2*u_xx + u - u^3,  x in [-1,1], t in [0,1]
-  IC:    u(x,0) = x^2*cos(pi*x)
-  BC:    u(-1,t) = u(1,t)  [periodic]
-  eps2:  0.0001
-  FDM:   IMEX, Nx=512, Nt=5000
-  Net:   5 x 128 MLP; SELU uses LeCun-normal init, others Xavier-uniform
-  Adam:  30000 epochs, CosineAnnealingWarmRestarts T0=5000, T_mult=2
-  LBFGS: 4 rounds x 500 iters
-  Loss:  w_pde=1, w_bc=10, w_ic=20
-  Smpl:  N_col=10000 + N_interface=3000, N_bc=200, N_ic=300
-  Seeds: 42, 123, 2024, 7  (matched to LSSA reproducibility study)
-
-  LSSA reference (already established, from Section 5.6):
-    L2: mean 0.157% +/- 0.139% | L1: mean 0.074% +/- 0.045%
-
-OUTPUT: text-only — per-activation per-seed L2/L1/loss, plus
-        per-activation mean +/- std across the four seeds, and a final
-        5-method comparison block (LSSA reference + 4 baselines).
-=============================================================================
-"""
-
 import torch, torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
@@ -53,7 +17,7 @@ print(f"Activations: {ACTIVATIONS}")
 print(f"Total runs: {len(ACTIVATIONS)} x {len(SEEDS)} = {len(ACTIVATIONS)*len(SEEDS)}")
 print("="*70)
 
-# ── FDM REFERENCE (computed once — seed-independent) ─────────────────
+# ── FDM REFERENCE ─────────────────
 def compute_fdm(Nx=512, Nt=5000, eps2=EPS2):
     print("[FDM] Computing IMEX Allen-Cahn reference ...")
     t0 = time.time()
@@ -73,7 +37,7 @@ def compute_fdm(Nx=512, Nt=5000, eps2=EPS2):
     print(f"      done ({time.time()-t0:.1f}s)")
     return x, t_stored, U_stored
 
-# ── STANDARD PINN (fixed activation) ─────────────────────────────────
+# ── STANDARD PINN  ─────────────────────────────────
 class StandardPINN(nn.Module):
     def __init__(self, activation='tanh', layers=None):
         super().__init__()
@@ -204,7 +168,7 @@ for af in ACTIVATIONS:
     print(f"    {'Mean':<8}{L2v.mean():>12.4f}{L1v.mean():>12.4f}")
     print(f"    {'Std':<8}{L2v.std(ddof=1):>12.4f}{L1v.std(ddof=1):>12.4f}")
 
-# ── FINAL 5-METHOD COMPARISON TABLE (mean +/- std) ───────────────────
+# ── FINAL 5-METHOD COMPARISON ───────────────────
 print("\n" + "="*70)
 print("  FINAL COMPARISON — mean +/- std across 4 seeds — 1D Allen-Cahn")
 print("="*70)
@@ -218,15 +182,3 @@ for af in ACTIVATIONS:
     l1s = f"{L1v.mean():.3f} +/- {L1v.std(ddof=1):.3f}"
     print(f"  {af.upper():<12}{l2s:>24}{l1s:>24}")
 print("="*70)
-
-# ── LaTeX-READY ROWS ─────────────────────────────────────────────────
-print("\nLaTeX table rows (mean +/- std):")
-print("-"*70)
-print(f"  LSSA (proposed) & 0.157 $\\pm$ 0.139 & 0.074 $\\pm$ 0.045 \\\\")
-print("  \\midrule")
-for af in ACTIVATIONS:
-    L2v = np.array([r['L2'] for r in all_results[af]])*100
-    L1v = np.array([r['L1'] for r in all_results[af]])*100
-    pretty = {'tanh':'tanh','gelu':'GELU','swish':'Swish','selu':'SELU'}[af]
-    print(f"  {pretty:<16} & {L2v.mean():.3f} $\\pm$ {L2v.std(ddof=1):.3f} & "
-          f"{L1v.mean():.3f} $\\pm$ {L1v.std(ddof=1):.3f} \\\\")
