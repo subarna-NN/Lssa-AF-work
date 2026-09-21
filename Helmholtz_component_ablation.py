@@ -246,7 +246,7 @@ for label, cfg in variants.items():
 print("\n" + "="*70)
 print("  ABLATION STUDY RESULTS — 2D Helmholtz")
 print("="*70)
-print("  Full LSSA reference (from finalized manuscript):")
+print("  Full LSSA reference :")
 print(f"    L2=0.0027% | L1=0.0018% | γ̄=2.9717 | trainable=68,481")
 print("-"*70)
 print(f"  {'Variant':<25} {'L2 (%)':>10} {'L1 (%)':>10} {'γ̄':>8} "
