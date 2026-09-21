@@ -292,7 +292,7 @@ for label, ctor in methods:
 print("\n" + "="*70)
 print("  SPECTRAL BASELINE COMPARISON — 2D Helmholtz")
 print("="*70)
-print("  LSSA reference (from finalized manuscript, seed 42):")
+print("  LSSA reference:")
 print(f"    L2=0.0027% | L1=0.0018% | Linf=1.232e-04 | 68,481 params | 3221s")
 print("-"*70)
 print(f"  {'Method':<25} {'L2 (%)':>10} {'L1 (%)':>10} {'Linf':>12} "
